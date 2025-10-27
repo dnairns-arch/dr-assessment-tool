@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: dr-assessment-postgres
+    environment:
+      POSTGRES_DB: dr_assessment
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d dr_assessment"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: dr-assessment-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: dr-assessment-backend
+    environment:
+      DATABASE_URL: postgresql://admin:password123@postgres:5432/dr_assessment
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev_secret_key_change_in_production
+      JWT_REFRESH_SECRET: dev_refresh_secret_key_change_in_production
+      PORT: 3000
+      NODE_ENV: development
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./packages/backend:/app/packages/backend
+      - /app/packages/backend/node_modules
+      - ./packages/shared:/app/packages/shared
+      - /app/packages/shared/node_modules
+    command: npm run dev
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: dr-assessment-frontend
+    environment:
+      VITE_API_URL: http://localhost:3000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./packages/frontend:/app/packages/frontend
+      - /app/packages/frontend/node_modules
+      - ./packages/shared:/app/packages/shared
+      - /app/packages/shared/node_modules
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -1,0 +1,56 @@
+{
+  "name": "dr-assessment-tool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Comprehensive Disaster Recovery Assessment Tool",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=packages/backend",
+    "dev:frontend": "npm run dev --workspace=packages/frontend",
+    "build": "npm run build --workspaces --if-present",
+    "build:backend": "npm run build --workspace=packages/backend",
+    "build:frontend": "npm run build --workspace=packages/frontend",
+    "test": "npm run test --workspaces --if-present",
+    "test:backend": "npm run test --workspace=packages/backend",
+    "test:frontend": "npm run test --workspace=packages/frontend",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write \"packages/**/*.{ts,tsx,js,jsx,json,md,css,scss}\"",
+    "format:check": "prettier --check \"packages/**/*.{ts,tsx,js,jsx,json,md,css,scss}\"",
+    "prisma:studio": "npm run studio --workspace=packages/backend",
+    "prisma:migrate": "npm run migrate:dev --workspace=packages/backend",
+    "prisma:generate": "npm run generate --workspace=packages/backend",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "@typescript-eslint/eslint-plugin": "^6.17.0",
+    "@typescript-eslint/parser": "^6.17.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dnairns-arch/dr-assessment-tool.git"
+  },
+  "keywords": [
+    "disaster-recovery",
+    "assessment",
+    "business-continuity",
+    "resilience",
+    "risk-management"
+  ],
+  "author": "Your Organization",
+  "license": "MIT"
+}

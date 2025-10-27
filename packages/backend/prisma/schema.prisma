@@ -1,0 +1,382 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User & Organization Models
+model User {
+  id             String       @id @default(uuid())
+  email          String       @unique
+  passwordHash   String
+  firstName      String
+  lastName       String
+  role           UserRole     @default(ASSESSOR)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  lastLoginAt    DateTime?
+  isActive       Boolean      @default(true)
+  mfaEnabled     Boolean      @default(false)
+  mfaSecret      String?
+
+  assessments Assessment[] @relation("AssessmentCreator")
+
+  @@index([organizationId])
+  @@index([email])
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ORG_ADMIN
+  ASSESSOR
+  VIEWER
+}
+
+model Organization {
+  id             String          @id @default(uuid())
+  name           String
+  subdomain      String?         @unique
+  customDomain   String?         @unique
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  isActive       Boolean         @default(true)
+  users          User[]
+  assessments    Assessment[]
+  brandingConfig BrandingConfig?
+  auditLogs      AuditLog[]
+
+  @@index([subdomain])
+  @@index([customDomain])
+}
+
+model BrandingConfig {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  logoUrl        String?
+  faviconUrl     String?
+  primaryColor   String       @default("#0066cc")
+  secondaryColor String       @default("#333333")
+  accentColor    String       @default("#ff6600")
+  fontFamily     String       @default("Inter, sans-serif")
+  contactEmail   String?
+  contactPhone   String?
+  website        String?
+  pdfFooter      String?
+  emailSignature String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+// Assessment Models
+model Assessment {
+  id            String           @id @default(uuid())
+  organizationId String
+  organization  Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  type          AssessmentType   @default(HIGH_LEVEL)
+  status        AssessmentStatus @default(DRAFT)
+  overallScore  Float?
+  createdById   String
+  createdBy     User             @relation("AssessmentCreator", fields: [createdById], references: [id])
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  submittedAt   DateTime?
+
+  highLevelResponses HighLevelResponse[]
+  sites              Site[]
+  risks              Risk[]
+  recommendations    Recommendation[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([createdById])
+}
+
+enum AssessmentType {
+  HIGH_LEVEL
+  DEEP_DIVE
+  HYBRID
+}
+
+enum AssessmentStatus {
+  DRAFT
+  IN_PROGRESS
+  SUBMITTED
+  ANALYZED
+  COMPLETED
+}
+
+model HighLevelResponse {
+  id           String     @id @default(uuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  category     String
+  questionId   String
+  questionText String
+  response     Boolean?
+  notes        String?
+  score        Float?
+  weight       Float?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([assessmentId, questionId])
+  @@index([assessmentId, category])
+}
+
+// Deep-Dive Models
+model Site {
+  id                 String     @id @default(uuid())
+  assessmentId       String
+  assessment         Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  name               String
+  description        String?
+  siteType           SiteType   @default(CLOUD)
+  provider           String?
+  region             String?
+  availabilityZone   String?
+  geographicLocation Json?
+  isActive           Boolean    @default(true)
+  metadata           Json?
+  position           Json?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  systems System[]
+
+  @@index([assessmentId])
+}
+
+enum SiteType {
+  CLOUD
+  ON_PREMISE
+  HYBRID
+  EDGE
+}
+
+model System {
+  id                  String      @id @default(uuid())
+  siteId              String
+  site                Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  name                String
+  description         String?
+  systemType          String?
+  businessCriticality Criticality @default(TIER_3)
+  rpoMinutes          Int?
+  rtoMinutes          Int?
+  complianceReqs      String[]    @default([])
+  operationalHours    String?
+  metadata            Json?
+  position            Json?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  components Component[]
+
+  @@index([siteId])
+}
+
+enum Criticality {
+  TIER_1
+  TIER_2
+  TIER_3
+  TIER_4
+}
+
+model Component {
+  id              String        @id @default(uuid())
+  systemId        String
+  system          System        @relation(fields: [systemId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  componentType   ComponentType
+  providerService String?
+  configuration   Json?
+  capacity        Json?
+  scalingConfig   Json?
+  isRedundant     Boolean       @default(false)
+  redundancyLevel Int?
+  hasHealthCheck  Boolean       @default(false)
+  metadata        Json?
+  position        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  services         Service[]
+  dependenciesFrom Dependency[] @relation("DependencySource")
+  dependenciesTo   Dependency[] @relation("DependencyTarget")
+
+  @@index([systemId])
+}
+
+enum ComponentType {
+  COMPUTE
+  STORAGE
+  DATABASE
+  NETWORK
+  LOAD_BALANCER
+  CACHE
+  MESSAGE_QUEUE
+  CDN
+  DNS
+  FIREWALL
+  OTHER
+}
+
+model Service {
+  id                   String    @id @default(uuid())
+  componentId          String
+  component            Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  name                 String
+  version              String?
+  description          String?
+  containerImage       String?
+  vmImage              String?
+  resourceRequirements Json?
+  healthCheckUrl       String?
+  port                 Int?
+  protocol             String?
+  environmentVars      Json?
+  metadata             Json?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([componentId])
+}
+
+model Dependency {
+  id             String         @id @default(uuid())
+  sourceId       String
+  source         Component      @relation("DependencySource", fields: [sourceId], references: [id], onDelete: Cascade)
+  targetId       String
+  target         Component      @relation("DependencyTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  dependencyType DependencyType @default(SYNC)
+  protocol       String?
+  isRequired     Boolean        @default(true)
+  description    String?
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+
+  @@unique([sourceId, targetId])
+  @@index([sourceId])
+  @@index([targetId])
+}
+
+enum DependencyType {
+  SYNC
+  ASYNC
+  DATA
+  CONTROL
+}
+
+// Risk & Recommendation Models
+model Risk {
+  id               String       @id @default(uuid())
+  assessmentId     String
+  assessment       Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  riskType         RiskType
+  severity         Severity
+  title            String
+  description      String
+  affectedEntities Json
+  impact           String?
+  likelihood       String?
+  mitigation       String?
+  detectedAt       DateTime     @default(now())
+  status           RiskStatus   @default(OPEN)
+  resolvedAt       DateTime?
+
+  @@index([assessmentId, severity])
+  @@index([status])
+}
+
+enum RiskType {
+  SPOF
+  CAPACITY
+  CONFIGURATION
+  NETWORK
+  DATA
+  COMPLIANCE
+  PROVIDER_CONCENTRATION
+  GEOGRAPHIC_CONCENTRATION
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum RiskStatus {
+  OPEN
+  ACKNOWLEDGED
+  MITIGATED
+  ACCEPTED
+  RESOLVED
+}
+
+model Recommendation {
+  id               String               @id @default(uuid())
+  assessmentId     String
+  assessment       Assessment           @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  category         String
+  priority         Priority
+  title            String
+  description      String
+  rationale        String?
+  implementation   String?
+  estimatedEffort  String?
+  estimatedCost    String?
+  expectedBenefit  String?
+  affectedEntities Json
+  status           RecommendationStatus @default(PENDING)
+  userResponse     String?
+  respondedAt      DateTime?
+  createdAt        DateTime             @default(now())
+
+  @@index([assessmentId, priority])
+  @@index([status])
+}
+
+enum Priority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum RecommendationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+// Audit Log
+model AuditLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String?
+  action         String
+  entityType     String
+  entityId       String
+  changes        Json?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([entityType, entityId])
+}

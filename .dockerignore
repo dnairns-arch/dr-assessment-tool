@@ -1,0 +1,63 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist
+build
+*.tsbuildinfo
+
+# Tests
+coverage
+.nyc_output
+**/*.test.ts
+**/*.spec.ts
+**/tests
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+docs
+CHANGELOG.md
+
+# CI/CD
+.github
+
+# Logs
+logs
+*.log
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Prisma
+**/prisma/migrations
