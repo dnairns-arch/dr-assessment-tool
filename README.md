@@ -2,6 +2,29 @@
 
 A comprehensive, enterprise-grade disaster recovery assessment platform that enables organizations to evaluate, plan, and optimize their resilience strategies across single and multi-cloud environments.
 
+## 🎯 Current Implementation Status
+
+**Version:** 1.0.0-beta
+**Completion:** ~35% (Foundation + Core Features)
+
+✅ **Fully Functional:**
+- Complete authentication system (register, login, refresh)
+- Assessment CRUD operations with pagination/filtering
+- High-level assessment with 50+ questions across 8 categories
+- Automated scoring calculation (0-100 scale)
+- Swagger API documentation at `/api/docs`
+- Production-ready database schema
+- Security hardening (JWT, rate limiting, XSS protection)
+- Docker deployment ready
+
+⏳ **In Progress:**
+- Additional backend routes (Sites, Systems, Components, etc.)
+- Analysis engine (SPOF detection, recommendations)
+- PDF report generation
+- Frontend React application
+
+📊 **See [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) for detailed breakdown**
+
 ## Overview
 
 This tool provides:
@@ -173,6 +196,11 @@ dr-assessment-tool/
 
    The backend will be available at http://localhost:3000
 
+8. **Access Swagger API Documentation**
+   ```bash
+   open http://localhost:3000/api/docs
+   ```
+
 ### Default Credentials
 
 After seeding, you can log in with:
@@ -184,6 +212,49 @@ After seeding, you can log in with:
 **Assessor User:**
 - Email: `assessor@demo.com`
 - Password: `Assessor123!`
+
+### Testing the API
+
+**Option 1: Swagger UI (Recommended)**
+1. Open http://localhost:3000/api/docs
+2. Click "Authorize" and enter your Bearer token
+3. Try out any endpoint with the "Try it out" button
+
+**Option 2: cURL**
+```bash
+# Register new user
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "Test123!",
+    "firstName": "John",
+    "lastName": "Doe",
+    "organizationName": "Test Corp"
+  }'
+
+# Login
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "Test123!"
+  }'
+
+# Create assessment (use token from login)
+curl -X POST http://localhost:3000/api/assessments \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{
+    "name": "Q1 2025 Assessment",
+    "type": "HIGH_LEVEL",
+    "description": "Quarterly review"
+  }'
+
+# Calculate score
+curl -X POST http://localhost:3000/api/assessments/{id}/high-level/calculate \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
 
 ## Development
 
