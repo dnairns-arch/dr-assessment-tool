@@ -14,6 +14,7 @@ import CreateAssessmentPage from './pages/assessments/CreateAssessmentPage';
 import AssessmentDetailPage from './pages/assessments/AssessmentDetailPage';
 import HighLevelAssessmentPage from './pages/assessments/HighLevelAssessmentPage';
 import DeepDivePage from './pages/assessments/DeepDivePage';
+import DependencyGraphPage from './pages/assessments/DependencyGraphPage';
 import AnalysisPage from './pages/analysis/AnalysisPage';
 import RisksPage from './pages/analysis/RisksPage';
 import RecommendationsPage from './pages/analysis/RecommendationsPage';
@@ -47,6 +48,7 @@ function App() {
               <Route path="/assessments/:id" element={<PrivateRoute><AssessmentDetailPage /></PrivateRoute>} />
               <Route path="/assessments/:id/high-level" element={<PrivateRoute><HighLevelAssessmentPage /></PrivateRoute>} />
               <Route path="/assessments/:id/deep-dive" element={<PrivateRoute><DeepDivePage /></PrivateRoute>} />
+              <Route path="/assessments/:id/dependencies" element={<PrivateRoute><DependencyGraphPage /></PrivateRoute>} />
               <Route path="/assessments/:id/analysis" element={<PrivateRoute><AnalysisPage /></PrivateRoute>} />
               <Route path="/assessments/:id/risks" element={<PrivateRoute><RisksPage /></PrivateRoute>} />
               <Route path="/assessments/:id/recommendations" element={<PrivateRoute><RecommendationsPage /></PrivateRoute>} />
